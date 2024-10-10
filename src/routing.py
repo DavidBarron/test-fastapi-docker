@@ -1,5 +1,6 @@
 import logging
 from asyncio import timeout
+from time import sleep
 
 import redis_lock
 from fastapi import APIRouter, Request
@@ -28,14 +29,22 @@ async def root():
 @router.get("/bump", status_code=status.HTTP_200_OK)
 def bump():
     """
-    Bump count in mongo doc
+    Bump count in mongo doc using manual doc lock
     """
     mongo_collection = get_mongo_collection()
     doc = mongo_collection.find_one({"_id": 1})
+
+    while doc.get("is_locked", False):
+        sleep(3)
+        doc = mongo_collection.find_one({"_id": 1})
+
+    mongo_collection.update_one({"_id": 1}, {"$set": {"is_locked": True}})
     count = doc["val"]
     count += 1
     logger.info(f"Bump count {count}")
-    mongo_collection.update_one({"_id": 1}, {"$set": {"val": count}})
+    mongo_collection.update_one(
+        {"_id": 1}, {"$set": {"val": count, "is_locked": False}}
+    )
 
     return {"count": count}
 
@@ -43,7 +52,7 @@ def bump():
 @router.get("/bump_lock", status_code=status.HTTP_200_OK)
 def bump_lock():
     """
-    Bump count in mongo doc
+    Bump count in mongo doc using redis lock
     """
     mongo_collection = get_mongo_collection()
 
