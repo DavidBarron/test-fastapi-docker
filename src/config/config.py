@@ -12,3 +12,7 @@ class Settings(BaseSettings):
     mongo_host: str = "mongodb://localhost:27017"
     mongo_db: str = "default"
     mongo_collection: str = "default_collection"
+
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_general_cache_db: int = 0

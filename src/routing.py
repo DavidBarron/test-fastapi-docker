@@ -1,6 +1,9 @@
 import logging
+from asyncio import timeout
 
+import redis_lock
 from fastapi import APIRouter, Request
+from redis import Redis, StrictRedis
 from starlette import status
 
 from src.config import get_settings
@@ -33,5 +36,28 @@ def bump():
     count += 1
     logger.info(f"Bump count {count}")
     mongo_collection.update_one({"_id": 1}, {"$set": {"val": count}})
+
+    return {"count": count}
+
+
+@router.get("/bump_lock", status_code=status.HTTP_200_OK)
+def bump_lock():
+    """
+    Bump count in mongo doc
+    """
+    mongo_collection = get_mongo_collection()
+
+    conn = StrictRedis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_general_cache_db,
+    )
+
+    with redis_lock.Lock(conn, "default-lock", expire=60):
+        doc = mongo_collection.find_one({"_id": 1})
+        count = doc["val"]
+        count += 1
+        logger.info(f"Bump count {count}")
+        mongo_collection.update_one({"_id": 1}, {"$set": {"val": count}})
 
     return {"count": count}
