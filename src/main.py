@@ -1,9 +1,11 @@
 import logging
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 
 from src.config import get_settings
+from src.config.clients import close_mongo, initialize_mongo
 from src.config.logging import init_logging
 
 # for now, init stuff here
@@ -14,10 +16,22 @@ settings = get_settings()
 logger = logging.getLogger(settings.app_name)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Preform app pre-startup actions before `yield` and app post-shutdown actions after, i.e. managing database or queue
+    connections would happen here.
+    Ref: https://fastapi.tiangolo.com/advanced/events/
+    """
+    initialize_mongo()
+    yield
+    close_mongo()
+
+
 def create_application() -> FastAPI:
     from src.routing import router as app_router
 
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
     app.include_router(app_router)
 
     return app
