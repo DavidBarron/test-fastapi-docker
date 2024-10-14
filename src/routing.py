@@ -1,14 +1,12 @@
 import logging
-from asyncio import timeout
 from time import sleep
 
 import redis_lock
-from fastapi import APIRouter, Request
-from redis import Redis, StrictRedis
+from fastapi import APIRouter
 from starlette import status
 
 from src.config import get_settings
-from src.config.clients import get_mongo_collection
+from src.config.clients import get_mongo_collection, get_redis_connection
 
 settings = get_settings()
 
@@ -55,14 +53,9 @@ def bump_lock():
     Bump count in mongo doc using redis lock
     """
     mongo_collection = get_mongo_collection()
+    redis_connection = get_redis_connection()
 
-    conn = StrictRedis(
-        host=settings.redis_host,
-        port=settings.redis_port,
-        db=settings.redis_general_cache_db,
-    )
-
-    with redis_lock.Lock(conn, "default-lock", expire=60):
+    with redis_lock.Lock(redis_connection, "default-lock", expire=60):
         doc = mongo_collection.find_one({"_id": 1})
         count = doc["val"]
         count += 1
