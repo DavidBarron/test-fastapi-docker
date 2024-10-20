@@ -12,8 +12,7 @@ settings = get_settings()
 
 logger = logging.getLogger(settings.app_name)
 
-
-router = APIRouter()
+router: APIRouter = APIRouter()
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
@@ -25,7 +24,7 @@ async def root():
 
 
 @router.get("/bump", status_code=status.HTTP_200_OK)
-def bump():
+def bump() -> dict:
     """
     Bump count in mongo doc using manual doc lock
     """
@@ -47,8 +46,8 @@ def bump():
     return {"count": count}
 
 
-@router.get("/bump_lock", status_code=status.HTTP_200_OK)
-def bump_lock():
+@router.get("/bump-lock", status_code=status.HTTP_200_OK)
+def bump_lock() -> dict:
     """
     Bump count in mongo doc using redis lock
     """

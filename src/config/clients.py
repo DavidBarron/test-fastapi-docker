@@ -32,7 +32,10 @@ def initialize_mongo() -> None:
 
     mongo_database = mongo_client[settings.mongo_db]
     mongo_collection = mongo_database[settings.mongo_collection]
-    # mongo_collection.insert_one({"_id": 1, "val": 1})
+    doc = mongo_collection.find_one({"_id": 1})
+
+    if not doc:
+        mongo_collection.insert_one({"_id": 1, "val": 1})
 
 
 def close_mongo():
