@@ -6,10 +6,10 @@ Make sure we have [Docker](https://docs.docker.com/desktop/install/mac-install/)
 ### Setup Mongo and Redis
 Pull the latest images of Mongo and Redis from DockerHub and run as containers.
 ```shell
-docker pull redis
+docker pull redis:latest
 docker pull mongodb/mongodb-community-server:latest
 
-docker run --name redis -p 6379:6379 -d redis
+docker run --name redis -p 6379:6379 -d redis:latest
 docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest
 ```
 Set up a virtualenv and run application.
