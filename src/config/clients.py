@@ -10,17 +10,15 @@ settings = get_settings()
 
 logger = logging.getLogger(settings.app_name)
 
-mongo_client = MongoClient(settings.mongo_host)
+mongo_client: MongoClient | None = None
 mongo_collection: Collection | None = None
-redis_connection = StrictRedis(
-    host=settings.redis_host,
-    port=settings.redis_port,
-    db=settings.redis_general_cache_db,
-)
+redis_connection: StrictRedis | None = None
 
 
 def initialize_mongo() -> None:
-    global mongo_collection
+    global mongo_client, mongo_collection
+
+    mongo_client = MongoClient(settings.mongo_host)
 
     try:
         mongo_client.admin.command("ping")
@@ -38,14 +36,57 @@ def initialize_mongo() -> None:
         mongo_collection.insert_one({"_id": 1, "val": 1})
 
 
-def close_mongo():
-    mongo_client.close()
-    logger.info("MongoDB connection closed.")
+def close_mongo() -> None:
+    global mongo_client
+
+    if mongo_client:
+        mongo_client.close()
+        logger.info("MongoDB connection closed.")
+    else:
+        logger.warning("MongoDB connection already closed.")
+
+
+def initialize_redis() -> None:
+    global redis_connection
+
+    redis_connection = StrictRedis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_general_cache_db,
+    )
+
+    try:
+        redis_connection.ping()
+        logger.info("Redis connection successful!")
+    except Exception as e:
+        # log error and re-raise exception separately so the application crashes and does not complete startup
+        logger.error("Failed to establish Redis connection.")
+        raise e
+
+
+def close_redis() -> None:
+    global redis_connection
+
+    if redis_connection:
+        redis_connection.close()
+        logger.info("Redis connection closed.")
+    else:
+        logger.warning("Redis connection already closed.")
 
 
 def get_mongo_collection() -> Collection:
+    global mongo_collection
+
+    if mongo_collection is None:
+        initialize_mongo()
+
     return mongo_collection
 
 
 def get_redis_connection() -> StrictRedis:
+    global redis_connection
+
+    if redis_connection is None:
+        initialize_redis()
+
     return redis_connection

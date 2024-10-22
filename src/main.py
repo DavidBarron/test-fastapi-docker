@@ -5,7 +5,12 @@ import uvicorn
 from fastapi import FastAPI
 
 from src.config import get_settings
-from src.config.clients import close_mongo, initialize_mongo
+from src.config.clients import (
+    close_mongo,
+    close_redis,
+    initialize_mongo,
+    initialize_redis,
+)
 from src.config.logging import init_logging
 
 # for now, init stuff here
@@ -24,8 +29,10 @@ async def lifespan(app: FastAPI):
     Ref: https://fastapi.tiangolo.com/advanced/events/
     """
     initialize_mongo()
+    initialize_redis()
     yield
     close_mongo()
+    close_redis()
 
 
 def create_application() -> FastAPI:
