@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from starlette import status
 
 from src.config import get_settings
-from src.config.clients import get_mongo_collection, get_redis_connection
+from src.config.clients import get_mongo_collection, get_redis_client
 
 settings = get_settings()
 
@@ -52,9 +52,9 @@ def bump_lock() -> dict:
     Bump count in mongo doc using redis lock
     """
     mongo_collection = get_mongo_collection()
-    redis_connection = get_redis_connection()
+    redis_client = get_redis_client()
 
-    with redis_lock.Lock(redis_connection, "default-lock", expire=60):
+    with redis_lock.Lock(redis_client, "default-lock", expire=60):
         doc = mongo_collection.find_one({"_id": 1})
         count = doc["val"]
         count += 1

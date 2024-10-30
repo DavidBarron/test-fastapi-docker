@@ -2,7 +2,7 @@ import logging
 
 from pymongo.collection import Collection
 from pymongo.mongo_client import MongoClient
-from redis import StrictRedis
+from redis import Redis
 
 from src.config import get_settings
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(settings.app_name)
 
 mongo_client: MongoClient | None = None
 mongo_collection: Collection | None = None
-redis_connection: StrictRedis | None = None
+redis_client: Redis | None = None
 
 
 def initialize_mongo() -> None:
@@ -47,16 +47,16 @@ def close_mongo() -> None:
 
 
 def initialize_redis() -> None:
-    global redis_connection
+    global redis_client
 
-    redis_connection = StrictRedis(
+    redis_client = Redis(
         host=settings.redis_host,
         port=settings.redis_port,
         db=settings.redis_general_cache_db,
     )
 
     try:
-        redis_connection.ping()
+        redis_client.ping()
         logger.info("Redis connection successful!")
     except Exception as e:
         # log error and re-raise exception separately so the application crashes and does not complete startup
@@ -65,10 +65,10 @@ def initialize_redis() -> None:
 
 
 def close_redis() -> None:
-    global redis_connection
+    global redis_client
 
-    if redis_connection:
-        redis_connection.close()
+    if redis_client:
+        redis_client.close()
         logger.info("Redis connection closed.")
     else:
         logger.warning("Redis connection already closed.")
@@ -83,10 +83,10 @@ def get_mongo_collection() -> Collection:
     return mongo_collection
 
 
-def get_redis_connection() -> StrictRedis:
-    global redis_connection
+def get_redis_client() -> Redis:
+    global redis_client
 
-    if redis_connection is None:
+    if redis_client is None:
         initialize_redis()
 
-    return redis_connection
+    return redis_client

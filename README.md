@@ -28,3 +28,6 @@ Simulate high traffic using [ApacheBench](https://httpd.apache.org/docs/2.4/prog
 ab -n 100 -c 10 http://127.0.0.1:8080/bump
 ab -n 100 -c 10 http://127.0.0.1:8080/bump-lock
 ```
+
+### Connecting to MemoryStore for Redis hosted on GCP from local machine
+[We can create a Compute Engine instance to use for port forwarding to the Redis instance.](https://cloud.google.com/memorystore/docs/redis/connect-redis-instance#connecting_from_a_local_machine_with_port_forwarding)
