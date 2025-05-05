@@ -13,7 +13,9 @@ settings = get_settings()
 
 logger = logging.getLogger(settings.app_name)
 
-router: APIRouter = APIRouter()
+router: APIRouter = APIRouter(
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Not found"}},
+)
 
 
 async def get_json(request: Request) -> dict:
@@ -96,22 +98,21 @@ def post_to_redis_set_by_name(
     logger.info(f"Added event to set: {set_name}.", extra={"event": event})
 
 
-@router.get("/{set_name}")
-def get_redis_and_clear_set_by_name(set_name: str):
+@router.get("/peek/{set_name}")
+def get_redis_set_by_name(set_name: str):
     """
-    Get all set contents and clear set to reset
+    Get all set contents
     """
+    logger.info(f"Getting all set contents: {set_name}")
+
     redis_client = get_redis_client()
     set_members = redis_client.smembers(set_name)
-
-    for member in set_members:
-        redis_client.srem(set_name, member)
 
     return [json.loads(member) for member in set_members]
 
 
 @router.get("/queue-status", status_code=status.HTTP_200_OK)
-def queue_status() -> dict:
+def get_queue_status() -> dict:
     """
     Get name of all sets and count of items in each.
     """
@@ -127,8 +128,20 @@ def queue_status() -> dict:
             sets.append(key.decode("utf-8"))
 
     for set_name in sets:
-        set_members = redis_client.smembers(set_name)
-        response[set_name] = len(set_members)
+        response[set_name] = redis_client.scard(set_name)
 
-    return {"blah": 123}
-    # return response
+    return response
+
+
+@router.get("/fetch/{set_name}")
+def get_redis_and_clear_set_by_name(set_name: str):
+    """
+    Get all set contents and clear set to reset
+    """
+    redis_client = get_redis_client()
+    set_members = redis_client.smembers(set_name)
+
+    for member in set_members:
+        redis_client.srem(set_name, member)
+
+    return [json.loads(member) for member in set_members]
