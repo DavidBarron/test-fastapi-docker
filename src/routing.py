@@ -119,7 +119,6 @@ def get_queue_status() -> dict:
     response: dict = {}
 
     for key in redis_client.scan_iter():
-        logger.info(f"Got key: {key}")
         if redis_client.type(key) == b"set":
             sets.append(key.decode("utf-8"))
 
@@ -129,7 +128,7 @@ def get_queue_status() -> dict:
     return response
 
 
-@router.get("/fetch/{set_name}")
+@router.get("/fetch/{set_name}", status_code=status.HTTP_200_OK)
 def get_redis_and_clear_set_by_name(set_name: str):
     """
     Get all set contents and clear set to reset
@@ -141,3 +140,20 @@ def get_redis_and_clear_set_by_name(set_name: str):
         redis_client.srem(set_name, member)
 
     return [json.loads(member) for member in set_members]
+
+
+@router.post("/requeue/{set_name}", status_code=status.HTTP_204_NO_CONTENT)
+def post_requeue(set_name: str):
+    """
+    Move all contents from the DLQ to the corresponding queue
+    """
+    redis_client = get_redis_client()
+    dlq_name = f"{set_name}_dlq"
+
+    dlq_members = redis_client.smembers(dlq_name)
+
+    logger.info(f"Moving {len(dlq_members)} items to {set_name}")
+
+    for member in dlq_members:
+        redis_client.sadd(set_name, member)
+        redis_client.srem(dlq_name, member)
