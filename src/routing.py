@@ -103,21 +103,17 @@ def get_redis_set_by_name(set_name: str):
     """
     Get all set contents
     """
-    logger.info(f"Getting all set contents: {set_name}")
-
     redis_client = get_redis_client()
     set_members = redis_client.smembers(set_name)
 
     return [json.loads(member) for member in set_members]
 
 
-@router.get("/queue-status", status_code=status.HTTP_200_OK)
+@router.get("/queue-stats", status_code=status.HTTP_200_OK)
 def get_queue_status() -> dict:
     """
     Get name of all sets and count of items in each.
     """
-    logger.info(f"Get all sets and count of items in each.")
-
     redis_client = get_redis_client()
     sets = []
     response: dict = {}

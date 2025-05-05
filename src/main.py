@@ -28,7 +28,8 @@ async def lifespan(app: FastAPI):
     connections would happen here.
     Ref: https://fastapi.tiangolo.com/advanced/events/
     """
-    
+    logger.info(f"Starting application in env: {settings.env}")
+
     initialize_mongo()
     initialize_redis()
     yield
